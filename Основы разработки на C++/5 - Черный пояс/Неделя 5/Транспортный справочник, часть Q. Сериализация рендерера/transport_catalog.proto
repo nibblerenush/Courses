@@ -1,0 +1,110 @@
+syntax = "proto3";
+
+package Serialize;
+
+// 1 part
+message BusResponse {
+    string bus_name = 1;
+    int32 route_length = 2;
+    double curvature = 3;
+    uint64 stop_count = 4;
+    uint64 unique_stop_count = 5;
+}
+
+message StopResponse {
+    string stop_name = 1;
+    repeated string buses = 2;
+}
+
+// 2 part
+message RouteElement {
+    enum RouteElementType {
+        TIME_ELEMENT = 0;
+        BUS_ELEMENT = 1;
+    }
+    RouteElementType type = 1;
+
+    // TIME_ELEMENT
+    string stop_name = 2;
+
+    // BUS_ELEMENT
+    double time = 3;
+    string bus = 4;
+    int32 span_count = 5;
+}
+
+message RouteResponse {
+    string from = 1;
+    string to = 2;
+    repeated RouteElement route_elements = 3;
+    double total_time = 4;
+}
+
+// 3 part
+message GeoCoords {
+    double latitude = 1;
+    double longitude = 2;
+}
+
+message Stop {
+    string name = 1;
+    GeoCoords geo_coords = 2;
+}
+
+message Bus {
+    string name = 1;
+    repeated string stops = 2;
+    bool is_roundtrip = 3;
+}
+
+message Point {
+    double x = 1;
+    double y = 2;
+}
+
+message Color {
+    enum ColorType {
+        STR = 0;
+        RGB = 1;
+        RGBA = 2;
+    }
+
+    ColorType type = 1;
+    string str = 2;
+    int32 red = 3;
+    int32 green = 4;
+    int32 blue = 5;
+    double alpha = 6;
+}
+
+message RenderSettings {
+    double width = 1;
+    double height = 2;
+    double padding = 3;
+    double stop_radius = 4;
+    double line_width = 5;
+    int32 stop_label_font_size = 6;
+    Point stop_label_offset = 7;
+    Color underlayer_color = 8;
+    double underlayer_width = 9;
+    repeated Color color_palette = 10;
+    int32 bus_label_font_size = 11;
+    Point bus_label_offset = 12;
+    repeated string layers = 13;
+    double outer_margin = 14;
+}
+
+message TransportCatalog  {
+    // 1 part
+    repeated BusResponse bus_responses = 1;
+    repeated StopResponse stop_responses = 2;
+
+    // 2 part
+    int32 wait_time = 3;
+    repeated RouteResponse route_responses = 4;
+
+    // 3 part
+    RenderSettings render_settings = 5; 
+    repeated Stop stops = 6;
+    repeated Bus buses = 7;
+}
