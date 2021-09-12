@@ -1,4 +1,4 @@
-#include <cstdint>
+п»ї#include <cstdint>
 #include <new>
 
 struct Barrier {
@@ -25,7 +25,7 @@ public:
     // first node
     m_free_head = new (buffer + sizeof(Barrier)) Node{ nullptr, nullptr };
 
-    // Установка границ памяти
+    // РЈСЃС‚Р°РЅРѕРІРєР° РіСЂР°РЅРёС† РїР°РјСЏС‚Рё
     m_begin = buffer;
     m_end = m_begin + size;
   }
@@ -36,12 +36,12 @@ public:
       std::uint8_t* raw_free_lb = reinterpret_cast<std::uint8_t*>(cur_node) - sizeof(Barrier);
       Barrier* free_lb = reinterpret_cast<Barrier*>(raw_free_lb);
       
-      // Отрываем кусок памяти с конца свободного блока
+      // РћС‚СЂС‹РІР°РµРј РєСѓСЃРѕРє РїР°РјСЏС‚Рё СЃ РєРѕРЅС†Р° СЃРІРѕР±РѕРґРЅРѕРіРѕ Р±Р»РѕРєР°
       if (free_lb->size >= size + 2 * sizeof(Barrier) + sizeof(Node) + 2 * sizeof(Barrier)) {
         std::uint8_t* raw_free_rb = raw_free_lb + free_lb->size - sizeof(Barrier);
         Barrier* free_rb = reinterpret_cast<Barrier*>(raw_free_rb);
         
-        // Правый барьер становится занятым
+        // РџСЂР°РІС‹Р№ Р±Р°СЂСЊРµСЂ СЃС‚Р°РЅРѕРІРёС‚СЃСЏ Р·Р°РЅСЏС‚С‹Рј
         std::uint8_t* raw_alloc_rb = raw_free_rb;
         Barrier* alloc_rb = free_rb;
 
@@ -51,12 +51,12 @@ public:
         std::uint8_t* alloc_memory = raw_alloc_rb - size - sizeof(Barrier);
         new (alloc_memory) Barrier{ *alloc_rb };
 
-        // Обновляем информацию по свободному куску памяти
+        // РћР±РЅРѕРІР»СЏРµРј РёРЅС„РѕСЂРјР°С†РёСЋ РїРѕ СЃРІРѕР±РѕРґРЅРѕРјСѓ РєСѓСЃРєСѓ РїР°РјСЏС‚Рё
         free_lb->size -= alloc_rb->size;
         std::uint8_t* new_free_raw_rb = alloc_memory - sizeof(Barrier);
         new (new_free_raw_rb) Barrier{ *free_lb };
 
-        // Возвращаем кусок памяти без метаданных
+        // Р’РѕР·РІСЂР°С‰Р°РµРј РєСѓСЃРѕРє РїР°РјСЏС‚Рё Р±РµР· РјРµС‚Р°РґР°РЅРЅС‹С…
         return static_cast<void*>(alloc_memory + sizeof(Barrier));
       }
 
@@ -78,7 +78,7 @@ public:
     std::uint8_t* new_chunk = raw_alloc_lb;
     std::size_t new_size = alloc_lb->size;
 
-    // Если слева свободно
+    // Р•СЃР»Рё СЃР»РµРІР° СЃРІРѕР±РѕРґРЅРѕ
     if (raw_alloc_lb != m_begin && (alloc_lb - 1)->isFree) {
       Barrier* free_rb = alloc_lb - 1;
 
@@ -92,7 +92,7 @@ public:
       RemoveNode(rm_node);
     }
 
-    // Если справа свободно
+    // Р•СЃР»Рё СЃРїСЂР°РІР° СЃРІРѕР±РѕРґРЅРѕ
     if ((raw_alloc_rb + sizeof(Barrier)) < m_end && (alloc_rb + 1)->isFree) {
       Barrier* free_lb = alloc_rb + 1;
       std::uint8_t* raw_free_lb = reinterpret_cast<std::uint8_t*>(free_lb);
@@ -142,24 +142,24 @@ private:
 
 Allocator allocator;
 
-// Эта функция будет вызвана перед тем как вызывать myalloc и myfree
-    // используйте ее чтобы инициализировать ваш аллокатор перед началом
-    // работы.
+// Р­С‚Р° С„СѓРЅРєС†РёСЏ Р±СѓРґРµС‚ РІС‹Р·РІР°РЅР° РїРµСЂРµРґ С‚РµРј РєР°Рє РІС‹Р·С‹РІР°С‚СЊ myalloc Рё myfree
+    // РёСЃРїРѕР»СЊР·СѓР№С‚Рµ РµРµ С‡С‚РѕР±С‹ РёРЅРёС†РёР°Р»РёР·РёСЂРѕРІР°С‚СЊ РІР°С€ Р°Р»Р»РѕРєР°С‚РѕСЂ РїРµСЂРµРґ РЅР°С‡Р°Р»РѕРј
+    // СЂР°Р±РѕС‚С‹.
     //
-    // buf - указатель на участок логической памяти, который ваш аллокатор
-    //       должен распределять, все возвращаемые указатели должны быть
-    //       либо равны NULL, либо быть из этого участка памяти
-    // size - размер участка памяти, на который указывает buf
+    // buf - СѓРєР°Р·Р°С‚РµР»СЊ РЅР° СѓС‡Р°СЃС‚РѕРє Р»РѕРіРёС‡РµСЃРєРѕР№ РїР°РјСЏС‚Рё, РєРѕС‚РѕСЂС‹Р№ РІР°С€ Р°Р»Р»РѕРєР°С‚РѕСЂ
+    //       РґРѕР»Р¶РµРЅ СЂР°СЃРїСЂРµРґРµР»СЏС‚СЊ, РІСЃРµ РІРѕР·РІСЂР°С‰Р°РµРјС‹Рµ СѓРєР°Р·Р°С‚РµР»Рё РґРѕР»Р¶РЅС‹ Р±С‹С‚СЊ
+    //       Р»РёР±Рѕ СЂР°РІРЅС‹ NULL, Р»РёР±Рѕ Р±С‹С‚СЊ РёР· СЌС‚РѕРіРѕ СѓС‡Р°СЃС‚РєР° РїР°РјСЏС‚Рё
+    // size - СЂР°Р·РјРµСЂ СѓС‡Р°СЃС‚РєР° РїР°РјСЏС‚Рё, РЅР° РєРѕС‚РѕСЂС‹Р№ СѓРєР°Р·С‹РІР°РµС‚ buf
 void mysetup(void* buf, std::size_t size) {
   allocator.SetBuffer(buf, size);
 }
 
-// Функция аллокации
+// Р¤СѓРЅРєС†РёСЏ Р°Р»Р»РѕРєР°С†РёРё
 void* myalloc(std::size_t size) {
   return allocator.GetMemory(size);
 }
 
-// Функция освобождения
+// Р¤СѓРЅРєС†РёСЏ РѕСЃРІРѕР±РѕР¶РґРµРЅРёСЏ
 void myfree(void* p) {
   allocator.FreeMemory(p);
 }
