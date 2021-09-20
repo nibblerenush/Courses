@@ -59,7 +59,6 @@ struct wdlock {
   struct condition cv;
 };
 
-
 /* Каждый контекст имеет свой уникальный timestamp и хранит
    список захваченных блокировок. */
 struct wdlock_ctx {
@@ -67,14 +66,12 @@ struct wdlock_ctx {
   struct wdlock* locks;
 };
 
-
 /* Всегда вызывается перед тем, как использовать контекст.
 
    ВАЖНО: функция является частью интерфейса - не меняйте
           ее имя и аргументы.
 */
-void wdlock_ctx_init(struct wdlock_ctx* ctx)
-{
+void wdlock_ctx_init(struct wdlock_ctx* ctx) {
   static atomic_ullong next;
 
   ctx->timestamp = atomic_fetch_add(&next, 1) + 1;
@@ -86,8 +83,7 @@ void wdlock_ctx_init(struct wdlock_ctx* ctx)
    ВАЖНО: функция является частью интерфейса - не меняйте
           ее имя и аргументы.
 */
-void wdlock_init(struct wdlock* lock)
-{
+void wdlock_init(struct wdlock* lock) {
   lock_init(&lock->lock);
   condition_init(&lock->cv);
   lock->owner = NULL;
