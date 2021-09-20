@@ -3,6 +3,7 @@
 build/
 clang/
 Debug/
+a.out
 
 *.sln
 *.vcxproj
