@@ -30,7 +30,7 @@ static ssize_t my_sys_show(struct kobject* kobj, struct kobj_attribute* attr, ch
 
 static ssize_t my_sys_store(struct kobject* kobj, struct kobj_attribute* attr, const char* buf, size_t count)
 {
-	return 0;
+  return 0;
 }
 
 static struct kobject* my_kobject = NULL;
