@@ -1,23 +1,23 @@
 #include <algorithm>
-#include <cmath>
 #include <cstdio>
 #include <iostream>
+#include <limits>
 #include <numeric>
 #include <vector>
 
-using namespace std;
+const double EPS = 1e-3;
+const double INF = 1e9;
 
-typedef vector<vector<double>> matrix;
-
-// ===== Gaussian elimination =====
 typedef std::vector<double> Column;
 typedef std::vector<double> Row;
 typedef std::vector<Row> Matrix;
 
+bool IsEqual(double a, double b) {
+  return std::abs(a - b) <= EPS;
+}
+
 struct Equation {
-  Equation(const Matrix& a, const Column& b) :
-    a(a),
-    b(b)
+  Equation(const Matrix& a, const Column& b) : a(a), b(b)
   {}
 
   Matrix a;
@@ -25,9 +25,7 @@ struct Equation {
 };
 
 struct Position {
-  Position(int column, int row) :
-    column(column),
-    row(row)
+  Position(int column, int row) : column(column), row(row)
   {}
 
   int column;
@@ -38,64 +36,57 @@ Position SelectPivotElement(
   const Matrix& a,
   std::vector <bool>& used_rows,
   std::vector <bool>& used_columns) {
-  // This algorithm selects the first free element.
-  // You'll need to improve it to pass the problem.
+
   Position pivot_element(0, 0);
-  while (used_rows[pivot_element.row])
+  const int size = a.size();
+  
+  while (pivot_element.row < size && used_rows[pivot_element.row]) {
     ++pivot_element.row;
-  while (used_columns[pivot_element.column])
+  }
+    
+  while (pivot_element.column < size && used_columns[pivot_element.column]) {
     ++pivot_element.column;
-
-  while (pivot_element.row < (int)a.size() && a[pivot_element.row][pivot_element.column] == 0) {
-    pivot_element.row += 1;
   }
 
-  if (pivot_element.row >= (int)a.size()) {
-    pivot_element.row = (int)a.size() - 1;
+  while (pivot_element.row < size && IsEqual(a[pivot_element.row][pivot_element.column], 0)) {
+    ++pivot_element.row;
   }
 
+  if (pivot_element.row >= size) {
+    pivot_element.row = size - 1;
+  }
+  
   return pivot_element;
 }
 
 void SwapLines(Matrix& a, Column& b, std::vector <bool>& used_rows, Position& pivot_element) {
-  swap(a[pivot_element.column], a[pivot_element.row]);
-  swap(b[pivot_element.column], b[pivot_element.row]);
-  swap(used_rows[pivot_element.column], used_rows[pivot_element.row]);
+  std::swap(a[pivot_element.column], a[pivot_element.row]);
+  std::swap(b[pivot_element.column], b[pivot_element.row]);
+  used_rows.swap(used_rows[pivot_element.column], used_rows[pivot_element.row]);
   pivot_element.row = pivot_element.column;
 }
 
 void ProcessPivotElement(Matrix& a, Column& b, const Position& pivot_element) {
-  // Write your code here
-  double pe_val = a[pivot_element.row][pivot_element.column];
+  const double pivot_value = a[pivot_element.row][pivot_element.column];
 
   // skip
-  if (pe_val == 0) {
+  if (IsEqual(pivot_value, 0)) {
     return;
   }
-
-  // Rescale to make pivot 1
-  Row& row = a[pivot_element.row];
-  for (double& val : row) {
-    val /= pe_val;
+  
+  for (double& elem : a[pivot_element.row]) {
+    elem /= pivot_value;
   }
-  b[pivot_element.row] /= pe_val;
+  b[pivot_element.row] /= pivot_value;
 
-  // Subtract row from others to make
-  // other entries in column 0
-  for (int i = 0; i < (int)a.size(); ++i) {
+  const int size = a.size();
+  for (int i = 0; i < size; ++i) {
     if (i != pivot_element.row) {
-      Row copy_row = row;
-      double entry = a[i][pivot_element.column];
-
-      for (double& val : copy_row) {
-        val *= entry;
+      const double coeff = a[i][pivot_element.column];
+      for (int j = 0; j < size; ++j) {
+        a[i][j] -= coeff * a[pivot_element.row][j];
       }
-      double copy_b = b[pivot_element.row] * entry;
-
-      for (int j = 0; j < (int)a.size(); ++j) {
-        a[i][j] -= copy_row[j];
-      }
-      b[i] -= copy_b;
+      b[i] -= coeff * b[pivot_element.row];
     }
   }
 }
@@ -121,46 +112,65 @@ Column SolveEquation(Equation equation) {
 
   return b;
 }
-// ===== Gaussian elimination =====
 
-// ===== GetSubsets =====
-class GetSubsets {
+class BinomialCoefficient {
 public:
-  vector<vector<int>> subsets(vector<int>& nums) {
-    vector<int> subset;
-    vector<vector<int>> result;
-    backtrack(nums, 0, subset, result);
-    return result;
+  BinomialCoefficient(int k, int n) : m_k(k), m_n(n) {
+    if (k < 0 || k > n) {
+      throw std::invalid_argument("Invalid argument k");
+    }
+
+    if (n < 0) {
+      throw std::invalid_argument("Invalid argument n");
+    }
+  }
+
+  std::vector<std::vector<int>> GetChoices() const {
+    std::vector<int> choice;
+    std::vector<std::vector<int>> choices;
+    backtrack(0, 0, choice, choices);
+    return choices;
   }
 
 private:
-  void backtrack(const vector<int>& nums, int index, vector<int>& subset, vector<vector<int>>& subsets) {
-    subsets.push_back(subset);
+  void backtrack(
+    int begin_index,
+    int depth,
+    std::vector<int>& choice,
+    std::vector<std::vector<int>>& choices) const
+  {
+    if ((int)choice.size() == m_k) {
+      choices.push_back(choice);
+      return;
+    }
 
-    for (int i = index; i < (int)nums.size(); ++i) {
-      subset.push_back(nums[i]);
-      backtrack(nums, i + 1, subset, subsets);
-      subset.pop_back();
+    for (int i = begin_index; i <= m_n - m_k + depth; ++i) {
+      choice.push_back(i);
+      backtrack(i + 1, depth + 1, choice, choices);
+      choice.pop_back();
     }
   }
-};
-// ===== GetSubsets =====
 
-bool check_equation_solution(const Column& solve_equation, const matrix& A, const vector<double>& b) {
-  // Check besides last
-  for (int i = 0; i < (int)A.size() - 1; ++i) {
-    double left_side = 0;
-    for (int j = 0; j < (int)A[0].size(); ++j) {
-      left_side += A[i][j] * solve_equation[j];
+private:
+  const int m_k;
+  const int m_n;
+};
+
+bool checkEquationSolution(
+  const Matrix& A,
+  const Column& b,
+  const Column& equationSolution)
+{
+  const int n = A.size();
+  const int m = equationSolution.size();
+  
+  for (int i = 0; i < n; ++i) {
+    double leftPart = 0;
+    for (int j = 0; j < m; ++j) {
+      leftPart += A[i][j] * equationSolution[j];
     }
     
-    // Check is equal
-    if (std::fabs(left_side - b[i]) < 1e-3) {
-      continue;
-    }
-    
-    // If greater
-    if (left_side > b[i]) {
+    if (leftPart > b[i] + EPS) {
       return false;
     }
   }
@@ -168,109 +178,101 @@ bool check_equation_solution(const Column& solve_equation, const matrix& A, cons
   return true;
 }
 
-pair<int, vector<double>> solve_diet_problem(
-    int n, 
-    int m, 
-    matrix A, 
-    vector<double> b, 
-    vector<double> c) {
+std::pair<int, std::vector<double>> solve_diet_problem(
+  int n,
+  int m,
+  Matrix A,
+  std::vector<double> b,
+  std::vector<double> c)
+{
+  int answerType = -1;
+  std::vector<double> answerAmounts(m, 0);
+  double maxPleasure = std::numeric_limits<double>::lowest();
 
-  // Write your code here
-  vector<int> initial_set(n + m + 1);
-  iota(initial_set.begin(), initial_set.end(), 0);
-  
-  GetSubsets get_subsets;
-  auto subsets = get_subsets.subsets(initial_set);
+  BinomialCoefficient bc(m, n + m + 1);
+  const auto subsets = bc.GetChoices();
 
-  // Add amount[i] >= 0
+  // Add inequalities amount[i] >= 0 (or -amount[i] <= 0)
   for (int i = 0; i < m; ++i) {
-    vector<double> row(m, 0);
+    Row row(m, 0);
     row[i] = -1;
-    A.push_back(move(row));
+    A.push_back(std::move(row));
     b.push_back(0);
   }
 
-  // Add amount[1] + amount[2] + ... + amount[m] <= 10^9
-  A.push_back(vector<double>(m, 1));
-  b.push_back((double)1'000'000'000);
+  // Add inequality amount[0] + ... + amount[m - 1] <= 10^9
+  A.push_back(Row(m, 1));
+  b.push_back(INF);
 
-  int ans_type = -1;
-  vector<double> ans_amounts(m, 0);
-  double max_pleasure = std::numeric_limits<double>::lowest();
+  for (const auto& subset : subsets) {
+    Matrix matrix;
+    Column column;
 
-  for (int i = 0; i < (int)subsets.size(); ++i) {
-    // Only m inequations
-    if (subsets[i].size() == m) {
-      Matrix cur_a;
-      Column cur_b;
+    for (int index : subset) {
+      matrix.push_back(A[index]);
+      column.push_back(b[index]);
+    }
 
-      for (int num : subsets[i]) {
-        cur_a.push_back(A[num]);
-        cur_b.push_back(b[num]);
+    Equation equation(matrix, column);
+    auto equationSolution = SolveEquation(equation);
+
+    if (checkEquationSolution(A, b, equationSolution)) {
+      double pleasure = 0;
+      for (int i = 0; i < m; ++i) {
+        pleasure += equationSolution[i] * c[i];
       }
 
-      Equation equation(cur_a, cur_b);
-      auto solve_equation = SolveEquation(equation);
-
-      if (check_equation_solution(solve_equation, A, b)) {
-        // Compute pleasure
-        double pleasure = 0;
-        for (int j = 0; j < m; ++j) {
-          pleasure += solve_equation[j] * c[j];
-        }
-
-        if (pleasure > max_pleasure) {
-          max_pleasure = pleasure;
-          ans_amounts = solve_equation;
-          ans_type = 0;
-        }
+      if (pleasure > maxPleasure) {
+        maxPleasure = pleasure;
+        answerType = 0;
+        answerAmounts = move(equationSolution);
       }
     }
   }
-
-  if (ans_type == 0) {
-    double amount_sum = std::accumulate(ans_amounts.begin(), ans_amounts.end(), 0.0);
-    if (amount_sum > (double)999'999'999) {
-      ans_type = 1;
+  
+  if (answerType == 0) {
+    double amountSum = std::accumulate(answerAmounts.begin(), answerAmounts.end(), 0.0);
+    if (amountSum + EPS > INF) {
+      answerType = 1;
     }
   }
 
-  return {ans_type, ans_amounts};
+  return { answerType, answerAmounts };
 }
 
-int main(){
+int main() {
   int n, m;
-  cin >> n >> m;
-  matrix A(n, vector<double>(m));
+  std::cin >> n >> m;
+  Matrix A(n, std::vector<double>(m));
   for (int i = 0; i < n; i++) {
     for (int j = 0; j < m; j++) {
-      cin >> A[i][j];
+      std::cin >> A[i][j];
     }
   }
-  vector<double> b(n);
+  std::vector<double> b(n);
   for (int i = 0; i < n; i++) {
-    cin >> b[i];
+    std::cin >> b[i];
   }
-  vector<double> c(m);
+  std::vector<double> c(m);
   for (int i = 0; i < m; i++) {
-    cin >> c[i];
+    std::cin >> c[i];
   }
 
-  pair<int, vector<double>> ans = solve_diet_problem(n, m, A, b, c);
+  std::pair<int, std::vector<double>> ans = solve_diet_problem(n, m, A, b, c);
 
   switch (ans.first) {
-    case -1: 
-      printf("No solution\n");
-      break;
-    case 0: 
-      printf("Bounded solution\n");
-      for (int i = 0; i < m; i++) {
-        printf("%.18f%c", ans.second[i], " \n"[i + 1 == m]);
-      }
-      break;
-    case 1:
-      printf("Infinity\n");
-      break;      
+  case -1:
+    printf("No solution\n");
+    break;
+  case 0:
+    printf("Bounded solution\n");
+    for (int i = 0; i < m; i++) {
+      printf("%.18f%c", ans.second[i], " \n"[i + 1 == m]);
+    }
+    break;
+  case 1:
+    printf("Infinity\n");
+    break;
   }
   return 0;
 }
