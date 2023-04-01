@@ -5,14 +5,14 @@
  * https://www.youtube.com/watch?v=3waA1pAKT8w
  * https://www.youtube.com/watch?v=E-SuGjUjJ3Y
  * 
- * У меня не получилось самостоятельно решить данную задачу, так как
- * я постоянно сталкивался с проблемой, что при опредленном значении EPS
- * задача ЛП решалась правильно, а при другом значении она не решалась.
- * В данном решении, как мне кажется, поле solusion_vars является костылем,
- * так как симплексная таблица в конце преобразований не всегда имеет ту форму,
- * когда в нужных с точки зрения грейдера столбцах присутствует только одна единица.
- * Поле solusion_vars как бы "исключает" некоторые значения из столбцов при подсчете
- * количества единиц в столбце.
+ * У меня не получилось самостоятельно решить данную задачу, так как я постоянно
+ * сталкивался с проблемой, что при опредленном значении EPS задача ЛП решалась
+ * правильно, а при другом значении она не решалась. В данном решении, как мне
+ * кажется, поле solusion_vars является костылем, так как симплексная таблица в
+ * конце преобразований не всегда имеет ту форму, когда в нужных с точки зрения
+ * грейдера столбцах присутствует только одна единица. Поле solusion_vars как бы
+ * "исключает" некоторые значения из столбцов при подсчете количества единиц в
+ * столбце.
  * 
  * С моей стороны произведен некоторый рефакторинг кода, как доказательство того,
  * что алгоритм я разобрал, понял и пытался самостоятельно реализовать. В процессе
@@ -87,14 +87,9 @@ struct simplex_method
     }
   }
 
-  void handle_artficial_vars()
-  {
-    for (std::size_t i = 0, j = m + n; i < b.size() - 1; ++i, ++j)
-    {
-      if (b[i] < 0.0)
-      {
-
-        solusion_vars[i] = -2;
+  void handle_artficial_vars() {
+    for (std::size_t i = 0, j = m + n; i < b.size() - 2; ++i, ++j) {
+      if (b[i] < 0.0) {
         A[i][j] = -1;
 
         b.back() += b[i];
@@ -102,13 +97,12 @@ struct simplex_method
 
         std::transform(A[i].begin(), A[i].end(), A[i].begin(), std::negate<long double>());
 
-        for (int k = 0; k < n + m; ++k)
-        {
+        for (int k = 0; k < n + m; ++k) {
           w[k] += A[i][k];
         }
       }
     }
-
+    
     std::transform(w.begin(), w.end(), w.begin(), std::negate<long double>());
   }
 
@@ -177,13 +171,11 @@ struct simplex_method
     }
   }
 
-  bool double_equals(double a, double b, double epsilon = 0.001)
-  {
+  bool double_equals(double a, double b, double epsilon = 0.001) {
     return std::abs(a - b) < epsilon;
   }
 
-  bool double_equals_zero(long double a, long double epsilon = 0.001)
-  {
+  bool double_equals_zero(long double a, long double epsilon = 0.001) {
     return double_equals(a, 0.0, epsilon);
   }
 
